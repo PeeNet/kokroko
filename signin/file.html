@@ -1,0 +1,335 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload and Viewer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<style>
+    /* Global Styles */
+body {
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+nav {
+    background-color: #333;
+    color: white;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+nav .logo {
+    font-size: 24px;
+    font-weight: 500;
+}
+
+nav .nav-links {
+    list-style: none;
+    display: flex;
+    gap: 20px;
+}
+
+nav .nav-links li a {
+    color: white;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+nav .upload-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+nav input[type="text"] {
+    padding: 5px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+nav #file-count {
+    font-weight: 500;
+}
+
+.file-list-section {
+    padding: 20px;
+}
+
+.file-list-section h2 {
+    margin-bottom: 20px;
+}
+
+#file-list {
+    list-style: none;
+    padding: 0;
+}
+
+#file-list li {
+    background-color: #f9f9f9;
+    margin: 10px 0;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+#file-list li a {
+    text-decoration: none;
+    font-weight: 500;
+    color: #333;
+}
+
+#file-list li button {
+    padding: 5px 10px;
+    margin-left: 10px;
+    border: none;
+    background-color: #007BFF;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#file-list li button:hover {
+    background-color: #0056b3;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 4px;
+    width: 300px;
+    text-align: center;
+}
+
+#upload-btn {
+    padding: 10px 20px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#upload-btn:hover {
+    background-color: #218838;
+}
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+</style>
+<body>
+
+    <!-- Navbar -->
+    <nav>
+        <div class="logo">File Upload</div>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="#files">Files
+            </a></li>
+            <li><a href="javascript:void(0)" id="open-upload-modal">Upload</a></li>
+        </ul>
+        <div class="upload-info">
+            <input type="text" id="search" placeholder="Search files..." oninput="searchFiles()">
+            <span id="file-count">Total files: 0</span>
+        </div>
+    </nav>
+
+    <!-- File List Section -->
+    <section id="files" class="file-list-section">
+        <h2>Uploaded Files</h2>
+        <p style="color: red;">NOTE: please pdf files can only be open in the web browser </p>
+       
+        <!-- File list will be dynamically added here -->
+        <a href="/files/ACTIVITY 1-PETER.pdf" target="_blank">Download PDF (ACTIVITY 1-PETER.pdf)</a>
+        <button class="print-btn" onclick="printFile('/files/ACTIVITY 1-PETER.pdf')">Print PDF</button>  
+   
+        <ul id="file-list">
+       </ul>
+    </section>
+   <!-- Upload Modal -->
+    <div id="upload-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="close-modal">&times;</span>
+            <h2>Upload Files</h2>
+
+            <input type="file" id="file-input" multiple>
+            <button id="upload-btn" onclick="uploadFiles()">Upload</button>
+        </div> 
+    </div>
+
+    <script>
+   let uploadedFiles = JSON.parse(localStorage.getItem('uploadedFiles')) || [];
+
+// Modal controls
+const modal = document.getElementById('upload-modal');
+const closeModal = document.getElementById('close-modal');
+const openModalBtn = document.getElementById('open-upload-modal');
+const fileListElement = document.getElementById('file-list');
+const fileCountElement = document.getElementById('file-count');
+
+// Open the modal for file upload
+openModalBtn.onclick = () => modal.style.display = 'flex';
+
+// Close the modal
+closeModal.onclick = () => modal.style.display = 'none';
+
+// Close the modal when clicking outside of it
+window.onclick = (event) => {
+    if (event.target === modal) {
+        modal.style.display = 'none';
+    }
+};
+
+// Handle file uploads
+function uploadFiles() {
+    const fileInput = document.getElementById('file-input');
+    const files = Array.from(fileInput.files);
+
+    if (files.length === 0) {
+        alert('No files selected!');
+        return;
+    }
+
+    files.forEach(file => {
+        const fileObj = {
+            name: file.name,
+            type: file.type,
+            url: URL.createObjectURL(file)
+        };
+        uploadedFiles.push(fileObj);
+    });
+
+    fileInput.value = ''; // Clear input
+    modal.style.display = 'none'; // Close modal
+    updateFileList();
+    updateFileCount();
+    saveFiles();
+}
+  // Delete a file
+  function deleteFile(index) {
+            uploadedFiles.splice(index, 1);
+            saveFiles();
+            updateFileList();
+            updateFileCount();
+        }
+
+// Update the list of files
+function updateFileList() {
+    fileListElement.innerHTML = ''; // Clear previous file list
+    uploadedFiles.forEach((file, index) => {
+        const fileItem = document.createElement('li');
+        fileItem.innerHTML = `
+            <a href="${file.url}" target="_blank">${file.name}</a>
+            <button onclick="openFile(${index})">Open</button>
+            <button onclick="deleteFile(${index})">Delete</button>
+            <button onclick="printFile(${index})">Print</button>
+        `;
+        fileListElement.appendChild(fileItem);
+    });
+}
+//
+
+// Update the file count
+function updateFileCount() {
+    fileCountElement.textContent = `Total files: ${uploadedFiles.length}`;
+}
+
+// Search functionality
+function searchFiles() {
+    const query = document.getElementById('search').value.toLowerCase();
+    const filteredFiles = uploadedFiles.filter(file => file.name.toLowerCase().includes(query));
+    displayFilteredFiles(filteredFiles);
+}
+
+// Display filtered files
+function displayFilteredFiles(files) {
+    fileListElement.innerHTML = ''; // Clear file list
+    files.forEach((file, index) => {
+        const fileItem = document.createElement('li');
+        fileItem.innerHTML = `
+        
+            <a href="${file.url}" target="_blank">${file.name}</a>
+            <button onclick="openFile(${index})">Open</button>
+            <button onclick="printFile(${index})">Print</button>
+        `;
+        fileListElement.appendChild(fileItem);
+    });
+}
+
+  
+// Open file in a new window/tab
+function openFile(index) {
+    const file = uploadedFiles[index];
+    const fileType = file.type.split('/')[1]; // Get the file type (pdf, docx, etc.)
+
+    if (fileType === 'pdf') {
+        // For PDF, open directly in a new window/tab
+        window.open(file.url, '_blank');
+    } else if (fileType === 'vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        // For DOCX files, prompt the user to download the file
+        const downloadLink = document.createElement('a');
+        downloadLink.href = file.url;
+        downloadLink.download = file.name;
+        downloadLink.click();
+    } else {
+        alert('Unsupported file type.');
+    }
+}
+
+// Print file
+function printFile(index) {
+    const file = uploadedFiles[index];
+    const fileType = file.type.split('/')[1]; // Get the file type (pdf, docx)
+
+    if (fileType === 'pdf') {
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = file.url;
+        document.body.appendChild(iframe);
+        iframe.contentWindow.print();
+    } else if (fileType === 'vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        alert('DOCX files need to be downloaded to print.');
+    } else {
+        alert('Unsupported file type.');
+    }
+}
+// Save files to localStorage
+function saveFiles() {
+            localStorage.setItem('uploadedFiles', JSON.stringify(uploadedFiles));
+        }
+  // On page load, update the file list and count from localStorage
+  window.onload = function () {
+            updateFileList();
+            updateFileCount();
+        };
+
+</script>
+</body>
+</html>

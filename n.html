@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Department Files</title>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            let params = new URLSearchParams(window.location.search);
+            let department = params.get("department");
+
+            if (department) {
+                fetch(`get_files.php?department=${department}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        let fileContainer = document.getElementById("file-list");
+                        fileContainer.innerHTML = "";
+                        data.forEach(file => {
+                            fileContainer.innerHTML += `<div>
+                                <a href="${file.file_path}" target="_blank">${file.file_name}</a>
+                            </div>`;
+                        });
+                    })
+                    .catch(error => console.error("Error fetching files:", error));
+            }
+        });
+    </script>
+</head>
+<body>
+    <h2>Files for <span id="department-name"></span></h2>
+    <div id="file-list">Loading files...</div>
+</body>
+</html>
